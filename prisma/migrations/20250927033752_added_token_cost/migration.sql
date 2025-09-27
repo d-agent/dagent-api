@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "public"."agent" ADD COLUMN     "inputTokenCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "outputTokenCost" DOUBLE PRECISION NOT NULL DEFAULT 0;
