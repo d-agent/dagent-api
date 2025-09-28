@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  # Application
+  app:
+    build: .
+    container_name: dagent_api
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        echo 'Running Prisma migrations...' &&
+        bunx prisma db push &&
+        echo 'Starting application...' &&
+        bun run src/index.ts
+      "
