@@ -69,3 +69,20 @@ export function parseAgentResponse(
     }
 }
 
+export const api_response = ({
+    message,
+    data,
+    is_error = false,
+}: {
+    message: unknown;
+    data?: unknown | null;
+    is_error?: boolean;
+}) => {
+    const response = {
+        success: !is_error,
+        data: data || null,
+        message,
+    };
+
+    return response;
+};
