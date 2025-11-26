@@ -18,7 +18,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy package files
-COPY package.json bun.lockb prisma/schema.prisma prisma.config.ts ./
+COPY package.json bun.lockb ./
 
 # Install dependencies
 RUN bun install --frozen-lockfile
@@ -27,7 +27,8 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Generate Prisma client
-RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public" bunx prisma generate
+# DATABASE_URL is required by prisma.config.ts but not used during generation
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" bunx prisma generate
 
 # Expose port 3002
 EXPOSE 3002
@@ -37,4 +38,4 @@ ENV NODE_ENV=production
 ENV PORT=3002
 
 # Start the application
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "db:deploy", "&&", "bun", "run", "src/index.ts"]

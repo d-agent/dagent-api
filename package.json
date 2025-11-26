@@ -1,7 +1,8 @@
 {
   "name": "dagent-api",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "db:deploy": "bunx prisma migrate deploy && bunx prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.0.1",
