@@ -39,7 +39,6 @@ app.use("*", async (c, next) => {
     return next();
   }
 
-
   c.set("user", session.user);
   c.set("session", session.session);
   return next();

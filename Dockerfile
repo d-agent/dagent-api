@@ -38,4 +38,4 @@ ENV NODE_ENV=production
 ENV PORT=3002
 
 # Start the application
-CMD ["bun", "run", "db:deploy", "&&", "bun", "run", "src/index.ts"]
+CMD bun run db:deploy && bun run src/index.ts
