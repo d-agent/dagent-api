@@ -25,33 +25,33 @@ export class ApiKeyController {
 				);
 			}
 
-			const { api_key_name } = requestBody;
+			const { name } = requestBody;
 
 			// Validate required fields
-			if (!api_key_name || typeof api_key_name !== "string") {
+			if (!name || typeof name !== "string") {
 				return c.json(
 					api_response({
-						message: "api_key_name is required and must be a non-empty string",
+						message: "name is required and must be a non-empty string",
 						is_error: true,
 					}),
 					400
 				);
 			}
 
-			if (api_key_name.trim().length === 0) {
+			if (name.trim().length === 0) {
 				return c.json(
 					api_response({
-						message: "api_key_name cannot be empty",
+						message: "name cannot be empty",
 						is_error: true,
 					}),
 					400
 				);
 			}
 
-			if (api_key_name.length > 100) {
+			if (name.length > 100) {
 				return c.json(
 					api_response({
-						message: "api_key_name must be 100 characters or less",
+						message: "name must be 100 characters or less",
 						is_error: true,
 					}),
 					400
@@ -73,7 +73,7 @@ export class ApiKeyController {
 
 			const apiKey = await ApiKeyService.createApiKey(
 				user.id,
-				api_key_name.trim()
+				name.trim()
 			);
 			return c.json(
 				api_response({ message: "API Key created successfully", data: apiKey })
