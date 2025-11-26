@@ -10,19 +10,21 @@ import { agentApi } from "../lib/contracts/agents";
 export class AgentService {
 	public static readonly primary = async (
 		ctx: Context,
-		requirement_json?: Requirement,
-		agent_id?: string,
-		message: string = ""
+		data: {
+			requirement_json?: Requirement,
+			agent_id?: string,
+			message: string
+		}
+
 	): Promise<any> => {
 		const api_key = await ctx.get("api_key");
-		// Generate a new UUID for session ID
+
 		const session_id = crypto.randomUUID();
 
-		console.log("session_id", session_id);
-		if (agent_id) {
+		if (data.agent_id) {
 			const agent = await prisma.agent.findUnique({
 				where: {
-					id: agent_id,
+					id: data.agent_id,
 				},
 				include: {
 					user: {
@@ -32,20 +34,18 @@ export class AgentService {
 					},
 				},
 			});
-			if (!agent?.deployedUrl || !agent?.llmProvider || !agent) {
+
+			if (!agent?.deployedUrl || !agent?.llmProvider || !agent?.userId) {
 				throw new Error("Agent URL or provider not found");
 			}
-
-			const agent_framework =
-				agent.framework_used || AgentFrameWorks.google_adk;
 
 			const response = await callProxiedAgent(
 				agent.deployedUrl,
 				agent.default_agent_name || "",
-				(agent.framework_used as AgentFrameWorks) || AgentFrameWorks.google_adk,
-				message,
+				agent.framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				data.message,
 				session_id,
-				api_key.userId
+				agent.userId
 			);
 
 			// if (!response.input_tokens || !response.output_tokens) {
@@ -55,17 +55,17 @@ export class AgentService {
 			// await handleAgentPayment({ agentCost: agent.agentCost, agentInputTokenCost: agent.inputTokenCost, agentOutputTokenCost: agent.outputTokenCost, userWalletAddress: agent.user.walletAddress?.address || "", inputTokenUsed: response.input_tokens, outputTokenUsed: response.output_tokens, api_key: ctx.get("api_key") });
 
 			return response.response_content;
-		} else if (requirement_json) {
-			const matched_agent = await matchAgents(requirement_json, 5);
+		}
+		else if (data.requirement_json) {
+			const matched_agent = await matchAgents(data.requirement_json, 5);
 			if (!matched_agent || !matched_agent[0].deployedUrl) {
 				throw new Error("Agent not found");
 			}
 			const response = await callProxiedAgent(
 				matched_agent[0].deployedUrl,
 				matched_agent[0].default_agent_name || "",
-				(matched_agent[0].framework_used as AgentFrameWorks) ||
-					AgentFrameWorks.google_adk,
-				message,
+				matched_agent[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				data.message,
 				session_id,
 				api_key.userId
 			);
@@ -83,6 +83,7 @@ export class AgentService {
 			//     outputTokenUsed: response.output_tokens,
 			//     api_key: ctx.get("api_key"),
 			// });
+
 			console.log("matched_agent", matched_agent[0]);
 			setCookie(ctx, "agent_id", matched_agent[0].id);
 			return response.response_content;
