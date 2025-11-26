@@ -9,13 +9,11 @@ import { agentContract } from "../lib/contracts/agent.contract";
 export class AgentService {
 	public static readonly primary = async (
 		ctx: Context,
-		requirement_json: Requirement,
+		requirement_json?: Requirement,
 		agent_id?: string,
 		message: string = ""
 	): Promise<any> => {
 		const api_key = await ctx.get("api_key");
-		console.log("hugabuga", api_key);
-		console.log("reqqqqq", requirement_json);
 		// Generate a new UUID for session ID
 		const session_id = crypto.randomUUID();
 
@@ -42,7 +40,8 @@ export class AgentService {
 
 			const response = await callProxiedAgent(
 				agent.deployedUrl,
-				AgentFrameWorks.google_adk,
+				agent.default_agent_name || "",
+				agent.framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
 				message,
 				session_id,
 				api_key.userId
@@ -55,14 +54,16 @@ export class AgentService {
 			// await handleAgentPayment({ agentCost: agent.agentCost, agentInputTokenCost: agent.inputTokenCost, agentOutputTokenCost: agent.outputTokenCost, userWalletAddress: agent.user.walletAddress?.address || "", inputTokenUsed: response.input_tokens, outputTokenUsed: response.output_tokens, api_key: ctx.get("api_key") });
 
 			return response.response_content;
-		} else {
+		}
+		else if (requirement_json) {
 			const matched_agent = await matchAgents(requirement_json, 5);
 			if (!matched_agent || !matched_agent[0].deployedUrl) {
 				throw new Error("Agent not found");
 			}
 			const response = await callProxiedAgent(
 				matched_agent[0].deployedUrl,
-				AgentFrameWorks.google_adk,
+				matched_agent[0].default_agent_name || "",
+				matched_agent[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
 				message,
 				session_id,
 				api_key.userId
@@ -84,6 +85,8 @@ export class AgentService {
 			console.log("matched_agent", matched_agent[0]);
 			setCookie(ctx, "agent_id", matched_agent[0].id);
 			return response.response_content;
+		} else {
+			throw new Error("No agent ID or requirement JSON provided");
 		}
 	};
 

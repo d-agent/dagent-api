@@ -1,8 +1,7 @@
-import { PrismaClient } from "../../generated/prisma";
+import { prisma } from "../db";
 import { Requirement } from "../../types";
 import { cosineSimilarity, generateEmbedding } from "./helper";
 
-const prisma = new PrismaClient();
 
 export async function matchAgents(requirement: Requirement, topN = 10) {
 	const reqEmbedding = await generateEmbedding(requirement.description);

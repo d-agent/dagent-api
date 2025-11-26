@@ -5,7 +5,7 @@ import { stakeContract } from "../contracts/stake.contract";
 import { config } from "../env";
 import { formatEther, parseEther } from "ethers";
 
-export const callProxiedAgent = async (deployedUrl: string, agent_framework: AgentFrameWorks, message: string, session_id: string, user_id: string) => {
+export const callProxiedAgent = async (deployedUrl: string, agent_default_name: string, agent_framework: AgentFrameWorks, message: string, session_id: string, user_id: string) => {
 	//TODO: future scope call routes according to the deployment use (with agent_framework info)
 	console.log('deeppppp', deployedUrl)
 	console.log('session_id', session_id)
@@ -16,7 +16,7 @@ export const callProxiedAgent = async (deployedUrl: string, agent_framework: Age
 	switch (agent_framework) {
 		case AgentFrameWorks.google_adk:
 			const session = await fetch(
-				`${deployedUrl}/apps/untangle-adk/users/${user_id}/sessions/${session_id}`,
+				`${deployedUrl}/apps/${agent_default_name}/users/${user_id}/sessions/${session_id}`,
 				{
 					method: "POST",
 					headers: {
@@ -28,7 +28,7 @@ export const callProxiedAgent = async (deployedUrl: string, agent_framework: Age
 
 			console.log('session', session_json)
 			const requestBody: GoogleADKRequestBody = {
-				appName: "untangle-adk",
+				appName: agent_default_name,
 				userId: user_id,
 				sessionId: session_id,
 				newMessage: {

@@ -1,7 +1,5 @@
 import { Context } from "hono";
-import { PrismaClient } from "../generated/prisma";
-
-const prisma = new PrismaClient();
+import { prisma } from "../lib/db";
 
 
 export class DevController {
