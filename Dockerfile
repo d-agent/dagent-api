@@ -23,12 +23,15 @@ COPY package.json bun.lockb ./
 # Install dependencies
 RUN bun install --frozen-lockfile
 
-# Copy source code
+# Copy everything except node_modules (already installed)
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client (ensure it's generated before app starts)
 # DATABASE_URL is required by prisma.config.ts but not used during generation
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" bunx prisma generate
+
+# Verify Prisma client was generated
+RUN ls -la src/generated/prisma/ || (echo "Prisma client generation failed!" && exit 1)
 
 # Expose port 3002
 EXPOSE 3002
