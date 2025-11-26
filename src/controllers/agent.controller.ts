@@ -7,69 +7,17 @@ import { errorMessageIncludes, getErrorMessage, getErrorStack } from "../lib/uti
 export class AgentController {
     public static readonly primary = async (c: Context) => {
         try {
-            // Input validation
-            // let requestBody;
-            // try {
-            //     requestBody = await c.req.json();
-            // } catch (parseError) {
-            //     console.error("Invalid JSON in primary agent request:", parseError);
-            //     return c.json(
-            //         api_response({ 
-            //             message: "Invalid JSON format in request body", 
-            //             is_error: true 
-            //         }),
-            //         400
-            //     );
-            // }
-
-            const { requirement_json, message } = await c.req.json();
-
-            // Validate required fields
-            if (!message || typeof message !== 'string') {
-                return c.json(
-                    api_response({
-                        message: "message is required and must be a non-empty string",
-                        is_error: true
-                    }),
-                    400
-                );
-            }
-
-            if (message.trim().length === 0) {
-                return c.json(
-                    api_response({
-                        message: "message cannot be empty",
-                        is_error: true
-                    }),
-                    400
-                );
-            }
-
-            if (message.length > 10000) {
-                return c.json(
-                    api_response({
-                        message: "message must be 10000 characters or less",
-                        is_error: true
-                    }),
-                    400
-                );
-            }
-
-            // Validate requirement_json if provided
-            if (requirement_json && typeof requirement_json !== 'object') {
-                return c.json(
-                    api_response({
-                        message: "requirement_json must be a valid object",
-                        is_error: true
-                    }),
-                    400
-                );
-            }
-
-            // Get agent ID from cookie
             const agentId = getCookie(c, 'agent_id');
-
-            const agentResponse = await AgentService.primary(c, requirement_json, agentId, message.trim());
+            const { requirement_json, message } = await c.req.json();
+            let agentResponse;
+            if (!agentId) {
+                agentResponse = await AgentService.primary(c, {
+                    requirement_json: requirement_json,
+                    message: message.trim()
+                });
+            } else {
+                agentResponse = await AgentService.primary(c, { agent_id: agentId, message: message.trim() });
+            }
             return c.json(api_response({ message: "Agent response", data: agentResponse }));
         } catch (error) {
             const errorMessage = getErrorMessage(error);
