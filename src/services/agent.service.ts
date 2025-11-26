@@ -5,6 +5,7 @@ import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { prisma } from "../lib/db";
 import { agentContract } from "../lib/contracts/agent.contract";
+import { agentApi } from "../lib/contracts/agents";
 
 export class AgentService {
 	public static readonly primary = async (
@@ -41,7 +42,7 @@ export class AgentService {
 			const response = await callProxiedAgent(
 				agent.deployedUrl,
 				agent.default_agent_name || "",
-				agent.framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				(agent.framework_used as AgentFrameWorks) || AgentFrameWorks.google_adk,
 				message,
 				session_id,
 				api_key.userId
@@ -54,8 +55,7 @@ export class AgentService {
 			// await handleAgentPayment({ agentCost: agent.agentCost, agentInputTokenCost: agent.inputTokenCost, agentOutputTokenCost: agent.outputTokenCost, userWalletAddress: agent.user.walletAddress?.address || "", inputTokenUsed: response.input_tokens, outputTokenUsed: response.output_tokens, api_key: ctx.get("api_key") });
 
 			return response.response_content;
-		}
-		else if (requirement_json) {
+		} else if (requirement_json) {
 			const matched_agent = await matchAgents(requirement_json, 5);
 			if (!matched_agent || !matched_agent[0].deployedUrl) {
 				throw new Error("Agent not found");
@@ -63,7 +63,8 @@ export class AgentService {
 			const response = await callProxiedAgent(
 				matched_agent[0].deployedUrl,
 				matched_agent[0].default_agent_name || "",
-				matched_agent[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				(matched_agent[0].framework_used as AgentFrameWorks) ||
+					AgentFrameWorks.google_adk,
 				message,
 				session_id,
 				api_key.userId
@@ -88,6 +89,20 @@ export class AgentService {
 		} else {
 			throw new Error("No agent ID or requirement JSON provided");
 		}
+	};
+
+	public static readonly verifyAgent = async (
+		uri: string,
+		agent_name: string
+	) => {
+		const { apps } = await agentApi.getApp(uri);
+		if (!apps) {
+			throw new Error("Invalid agent URI");
+		}
+		if (!apps.includes(agent_name)) {
+			throw new Error("Agent name not found in the deployed URL");
+		}
+		return apps;
 	};
 
 	public static readonly createAgent = async (
