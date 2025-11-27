@@ -1,0 +1,1 @@
+export const NONCE_MESSAGE = 'I agree to the term and conditions of the Mesh: ';

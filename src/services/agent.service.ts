@@ -56,14 +56,14 @@ export class AgentService {
 			return response.response_content;
 		}
 		else if (data.requirement_json) {
-			const matched_agent = await matchAgents(data.requirement_json, 5);
-			if (!matched_agent || !matched_agent[0].deployedUrl) {
+			const matched_agents = await matchAgents(data.requirement_json, 5);
+			if (!matched_agents || !matched_agents[0].deployedUrl) {
 				throw new Error("Agent not found");
 			}
 			const response = await callProxiedAgent(
-				matched_agent[0].deployedUrl,
-				matched_agent[0].default_agent_name || "",
-				matched_agent[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				matched_agents[0].deployedUrl,
+				matched_agents[0].default_agent_name || "",
+				matched_agents[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				api_key.userId
@@ -83,8 +83,8 @@ export class AgentService {
 			//     api_key: ctx.get("api_key"),
 			// });
 
-			console.log("matched_agent", matched_agent[0]);
-			setCookie(ctx, "agent_id", matched_agent[0].id);
+			console.log("matched_agent", matched_agents[0]);
+			setCookie(ctx, "agent_id", matched_agents[0].id);
 			return response.response_content;
 		} else {
 			throw new Error("No agent ID or requirement JSON provided");

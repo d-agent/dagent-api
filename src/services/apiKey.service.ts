@@ -6,8 +6,9 @@ export class ApiKeyService {
 		user_id: string,
 		api_key_name: string
 	) => {
-		console.log("hi");
-		const current_stake = await getUserAddressBalance(user_id);
+		//TODO: Fix the current stake issue
+		// const current_stake = await getUserAddressBalance(user_id);
+		const current_stake = 1000
 		const apiKey = await auth.api.createApiKey({
 			body: {
 				name: api_key_name,
