@@ -3,6 +3,7 @@ import { getCookie } from "hono/cookie"
 import { AgentService } from "../services/agent.service"
 import { api_response } from "../lib/utils/parser"
 import { errorMessageIncludes, getErrorMessage, getErrorStack } from "../lib/utils/error"
+import { IAgentCreate, IAgentNameVerification } from "../lib/validators/agent.validator"
 
 export class AgentController {
     public static readonly primary = async (c: Context) => {
@@ -91,6 +92,21 @@ export class AgentController {
         }
     }
 
+    public static readonly verifyAgent = async(c: Context) => {
+        try {
+            const { deployedUrl, default_agent_name } =(await c.req.json()) as IAgentNameVerification;
+            if (!deployedUrl && !default_agent_name) {
+                return c.json(api_response({ message: 'deployedUrl and default_agent_name are required' }), 400);
+            }
+            await AgentService.verifyAgent(deployedUrl, default_agent_name);
+            return c.json(api_response({ message: 'Agent URL verified successfully', data: true }), 200);
+        } catch (error) {
+            if(error instanceof Error) {
+                return c.json(api_response({ message: error.message, data: false, is_error: true }), 500);
+            }
+        }
+    }
+
     public static readonly createAgent = async (c: Context) => {
         try {
             // Input validation
@@ -118,8 +134,8 @@ export class AgentController {
                 is_multiAgentSystem,
                 default_agent_name,
                 framework_used,
-                can_stream
-            } = requestBody;
+                can_stream,
+            } = requestBody as IAgentCreate;
 
             // Validate required fields
             const requiredStringFields = {
