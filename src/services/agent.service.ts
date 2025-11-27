@@ -5,17 +5,16 @@ import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { prisma } from "../lib/db";
 import { agentContract } from "../lib/contracts/agent.contract";
-import { agentApi } from "../lib/contracts/agents";
+import { agentApi } from "../lib/agents";
 
 export class AgentService {
 	public static readonly primary = async (
 		ctx: Context,
 		data: {
-			requirement_json?: Requirement,
-			agent_id?: string,
-			message: string
+			requirement_json?: Requirement;
+			agent_id?: string;
+			message: string;
 		}
-
 	): Promise<any> => {
 		const api_key = await ctx.get("api_key");
 
@@ -42,7 +41,7 @@ export class AgentService {
 			const response = await callProxiedAgent(
 				agent.deployedUrl,
 				agent.default_agent_name || "",
-				agent.framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				(agent.framework_used as AgentFrameWorks) || AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				agent.userId
@@ -55,8 +54,7 @@ export class AgentService {
 			// await handleAgentPayment({ agentCost: agent.agentCost, agentInputTokenCost: agent.inputTokenCost, agentOutputTokenCost: agent.outputTokenCost, userWalletAddress: agent.user.walletAddress?.address || "", inputTokenUsed: response.input_tokens, outputTokenUsed: response.output_tokens, api_key: ctx.get("api_key") });
 
 			return response.response_content;
-		}
-		else if (data.requirement_json) {
+		} else if (data.requirement_json) {
 			const matched_agents = await matchAgents(data.requirement_json, 5);
 			if (!matched_agents || !matched_agents[0].deployedUrl) {
 				throw new Error("Agent not found");
@@ -64,7 +62,8 @@ export class AgentService {
 			const response = await callProxiedAgent(
 				matched_agents[0].deployedUrl,
 				matched_agents[0].default_agent_name || "",
-				matched_agents[0].framework_used as AgentFrameWorks || AgentFrameWorks.google_adk,
+				(matched_agents[0].framework_used as AgentFrameWorks) ||
+					AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				api_key.userId

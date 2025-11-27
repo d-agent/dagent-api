@@ -3,7 +3,7 @@ import {
 	ICreateSessionParams,
 	IResponseCreateSession,
 	IResponseListApps,
-} from "../../../types/agents";
+} from "../../types/agents";
 
 class AgentApi {
 	private static instance: AgentApi;
