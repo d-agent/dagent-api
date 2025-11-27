@@ -5,6 +5,7 @@ import verifyApiKey from "../middlewares/verifyApiEth.middleware";
 const app = new Hono();
 
 app.post("/", verifyApiKey, AgentController.primary);
+app.post("/verify", AgentController.verifyAgent);
 app.post("/create", AgentController.createAgent);
 app.get("/all", AgentController.getAllAgents);
 app.get("/:id", AgentController.getAgent);
