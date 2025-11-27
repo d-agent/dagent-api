@@ -63,7 +63,7 @@ export class AgentService {
 				matched_agents[0].deployedUrl,
 				matched_agents[0].default_agent_name || "",
 				(matched_agents[0].framework_used as AgentFrameWorks) ||
-					AgentFrameWorks.google_adk,
+				AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				api_key.userId
@@ -90,6 +90,47 @@ export class AgentService {
 			throw new Error("No agent ID or requirement JSON provided");
 		}
 	};
+
+	public static readonly runAgent = async (agent_id: string, message: string, user_id: string) => {
+		const agent = await prisma.agent.findUnique({
+			where: { id: agent_id },
+		});
+		if (!agent) {
+			throw new Error("Agent not found");
+		}
+		const session_id = crypto.randomUUID();
+
+		const response = await callProxiedAgent(
+			agent.deployedUrl,
+			agent.default_agent_name || "",
+			(agent.framework_used as AgentFrameWorks) || AgentFrameWorks.google_adk,
+			message,
+			session_id,
+			user_id
+		);
+
+		await prisma.user.update({
+			where: { id: user_id },
+			data: {
+				creditBalance: {
+					decrement: Number(agent.agentCost) + (agent.inputTokenCost > 0 ? Number(agent.inputTokenCost) * (response.input_tokens || 0) : 0) + (agent.outputTokenCost > 0 ? Number(agent.outputTokenCost) * (response.output_tokens || 0) : 0),
+				},
+				creditBalanceLastUpdated: new Date(),
+			},
+		});
+
+		const user = await prisma.user.findUnique({
+			where: { id: user_id },
+		});
+		if (!user) {
+			throw new Error("User not found");
+		}
+
+		return {
+			response: response.response_content,
+			creditBalance: user.creditBalance,
+		};
+	}
 
 	public static readonly verifyAgent = async (
 		uri: string,
@@ -268,7 +309,7 @@ export class AgentService {
 	) => {
 		// First check if the agent exists and user has permission
 		const existingAgent = await prisma.agent.findUnique({
-			where: { id: agent_id },
+			where: { id: agent_id, userId: user_id },
 		});
 
 		if (!existingAgent) {
@@ -280,7 +321,7 @@ export class AgentService {
 		}
 
 		const agent = await prisma.agent.delete({
-			where: { id: agent_id },
+			where: { id: agent_id, userId: user_id },
 		});
 
 		return agent;

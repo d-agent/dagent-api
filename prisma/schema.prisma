@@ -13,12 +13,14 @@ model user {
   email         String         @unique
   emailVerified Boolean
   image         String?
-  nonce         String?
   createdAt     DateTime       @default(now()) @db.Timestamptz(6)
   updatedAt     DateTime       @default(now()) @db.Timestamptz(6)
+  nonce         String?
   agent         agent[]
   apikey        apikey[]
   walletAddress walletAddress?
+  creditBalance Float          @default(100)
+  creditBalanceLastUpdated DateTime @db.Timestamptz(6) @default(now())
 }
 
 model walletAddress {
