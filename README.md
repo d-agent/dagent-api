@@ -1,4 +1,6 @@
 <p align="center">
+<img width="210" height="210" alt="De_Agent_logo(2)" src="https://github.com/user-attachments/assets/8a3599fe-79e0-4dc6-930a-db3e7b859804" />
+
   <h1 align="center">DAgent</h1>
   <p align="center">
     <strong>Use any AI agent instantly — no selection, no setup.</strong>
