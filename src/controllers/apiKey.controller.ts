@@ -60,6 +60,7 @@ export class ApiKeyController {
 
 			// Get user from context
 			const user = await c.get("user");
+
 			if (!user || !user.id) {
 				console.error("User not found in context for createApiKey");
 				return c.json(
@@ -118,8 +119,8 @@ export class ApiKeyController {
 			// Generic server error
 			return c.json(
 				api_response({
-					message: "Failed to create API Key. Please try again later.",
 					is_error: true,
+					message: errorMessage,
 				}),
 				500
 			);
@@ -168,6 +169,7 @@ export class ApiKeyController {
 
 			// Get user from context
 			const user = await c.get("user");
+
 			if (!user || !user.id) {
 				console.error("User not found in context for updateApiKey");
 				return c.json(
