@@ -6,10 +6,9 @@ import { config } from "../env";
 import { formatEther, parseEther } from "ethers";
 
 export const callProxiedAgent = async (deployedUrl: string, agent_default_name: string, agent_framework: AgentFrameWorks, message: string, session_id: string, user_id: string) => {
-	//TODO: future scope call routes according to the deployment use (with agent_framework info)
-	console.log('deeppppp', deployedUrl)
-	console.log('session_id', session_id)
-	console.log('user_id', user_id)
+	// console.log('deployedUrl', deployedUrl)
+	// console.log('session_id', session_id)
+	// console.log('user_id', user_id)
 
 	let response: Response | undefined;
 
@@ -24,9 +23,7 @@ export const callProxiedAgent = async (deployedUrl: string, agent_default_name: 
 					},
 				}
 			);
-			const session_json = await session.json();
 
-			console.log('session', session_json)
 			const requestBody: GoogleADKRequestBody = {
 				appName: agent_default_name,
 				userId: user_id,
@@ -81,7 +78,6 @@ export const callProxiedAgent = async (deployedUrl: string, agent_default_name: 
 	}
 
 	const json_response = await response.json()
-	console.log('ddd', json_response)
 	const parsedResponse = parseAgentResponse(agent_framework, json_response)
 	return parsedResponse
 }

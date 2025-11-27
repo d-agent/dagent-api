@@ -1,5 +1,4 @@
 import { Context } from "hono"
-import { getCookie } from "hono/cookie"
 import { AgentService } from "../services/agent.service"
 import { api_response } from "../lib/utils/parser"
 import { errorMessageIncludes, getErrorMessage, getErrorStack } from "../lib/utils/error"
@@ -8,18 +7,26 @@ import { IAgentCreate, IAgentNameVerification } from "../lib/validators/agent.va
 export class AgentController {
     public static readonly primary = async (c: Context) => {
         try {
-            const agentId = getCookie(c, 'agent_id');
-            const { requirement_json, message } = await c.req.json();
+            // const agentId = getCookie(c, 'agent_id');
+            const { requirements, text, is_new_session } = await c.req.json();
+
+            if (is_new_session === true) {
+                c.set("agent_id", null);
+            }
+
+            const agentId = c.get("agent_id");
+
             let agentResponse;
             if (!agentId) {
                 agentResponse = await AgentService.primary(c, {
-                    requirement_json: requirement_json,
-                    message: message.trim()
+                    requirement_json: requirements,
+                    message: text.trim()
                 });
             } else {
-                agentResponse = await AgentService.primary(c, { agent_id: agentId, message: message.trim() });
+                agentResponse = await AgentService.primary(c, { agent_id: agentId, message: text.trim() });
             }
             return c.json(api_response({ message: "Agent response", data: agentResponse }));
+
         } catch (error) {
             const errorMessage = getErrorMessage(error);
             const errorStack = getErrorStack(error);
@@ -92,16 +99,16 @@ export class AgentController {
         }
     }
 
-    public static readonly verifyAgent = async(c: Context) => {
+    public static readonly verifyAgent = async (c: Context) => {
         try {
-            const { deployedUrl, default_agent_name } =(await c.req.json()) as IAgentNameVerification;
+            const { deployedUrl, default_agent_name } = (await c.req.json()) as IAgentNameVerification;
             if (!deployedUrl && !default_agent_name) {
                 return c.json(api_response({ message: 'deployedUrl and default_agent_name are required' }), 400);
             }
             await AgentService.verifyAgent(deployedUrl, default_agent_name);
             return c.json(api_response({ message: 'Agent URL verified successfully', data: true }), 200);
         } catch (error) {
-            if(error instanceof Error) {
+            if (error instanceof Error) {
                 return c.json(api_response({ message: error.message, data: false, is_error: true }), 500);
             }
         }
@@ -245,7 +252,7 @@ export class AgentController {
             }
 
             // Validate numeric fields
-            const numericCost = parseFloat(agentCost);
+            const numericCost = parseFloat(agentCost.toString());
             if (isNaN(numericCost) || numericCost < 0) {
                 return c.json(
                     api_response({
@@ -272,7 +279,7 @@ export class AgentController {
             const agent = await AgentService.createAgent(user.id, {
                 name: name.trim(),
                 description: description.trim(),
-                agentCost,
+                agentCost: agentCost.toString(),
                 deployedUrl: deployedUrl.trim(),
                 llmProvider: llmProvider.trim(),
                 skills: skills.map(skill => skill.trim()),

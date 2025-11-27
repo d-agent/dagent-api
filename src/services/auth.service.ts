@@ -96,7 +96,7 @@ export class AuthService {
                 role: 'user',
                 exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // Token expires in 30 days
             }
-            console.log('payload', payload);
+
             // create a bearer access token
             const token = await sign({
                 payload,

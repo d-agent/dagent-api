@@ -63,7 +63,7 @@ export class AgentService {
 				matched_agents[0].deployedUrl,
 				matched_agents[0].default_agent_name || "",
 				(matched_agents[0].framework_used as AgentFrameWorks) ||
-					AgentFrameWorks.google_adk,
+				AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				api_key.userId
@@ -83,8 +83,8 @@ export class AgentService {
 			//     api_key: ctx.get("api_key"),
 			// });
 
-			console.log("matched_agent", matched_agents[0]);
-			setCookie(ctx, "agent_id", matched_agents[0].id);
+			// console.log("matched_agent", matched_agents[0]);
+			ctx.set("agent_id", matched_agents[0].id);
 			return response.response_content;
 		} else {
 			throw new Error("No agent ID or requirement JSON provided");
