@@ -30,7 +30,7 @@ export class AgentController {
             // Get agent_id from Redis session storage
             const agentId = await SessionService.getAgentId(api_key.userId, api_key.id);
 
-            console.log("agentId ALA re", agentId)
+            console.log("agentId ALA re", agentId);
             let agentResponse;
             if (!agentId) {
                 agentResponse = await AgentService.primary(c, {
