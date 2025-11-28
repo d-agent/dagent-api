@@ -23,6 +23,9 @@ export const callProxiedAgent = async (deployedUrl: string, agent_default_name: 
 					},
 				}
 			);
+			if (!session.ok) {
+				throw new Error(`Failed to initialize session: ${session.statusText}`);
+			}
 
 			const requestBody: GoogleADKRequestBody = {
 				appName: agent_default_name,
