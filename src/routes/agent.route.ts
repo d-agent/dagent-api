@@ -8,6 +8,7 @@ app.post("/", verifyApiKey, AgentController.primary);
 app.post("/verify", AgentController.verifyAgent);
 app.post("/create", AgentController.createAgent);
 app.get("/all", AgentController.getAllAgents);
+app.post("/:id/run", AgentController.runAgent);
 app.get("/:id", AgentController.getAgent);
 app.put("/:id", AgentController.updateAgent);
 app.delete("/:id", AgentController.deleteAgent);

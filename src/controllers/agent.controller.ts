@@ -92,16 +92,28 @@ export class AgentController {
         }
     }
 
-    public static readonly verifyAgent = async(c: Context) => {
+    public static readonly runAgent = async (c: Context) => {
         try {
-            const { deployedUrl, default_agent_name } =(await c.req.json()) as IAgentNameVerification;
+            const agent_id = c.req.param('id');
+            const { message } = await c.req.json();
+            const user = await c.get('user');
+            const agent = await AgentService.runAgent(agent_id.trim(), message.trim(), user?.id);
+            return c.json(api_response({ message: "Agent response", data: agent }));
+        } catch (error) {
+            return c.json(api_response({ message: `Failed to run agent: ${getErrorMessage(error)}`, is_error: true }), 500);
+        }
+    }
+
+    public static readonly verifyAgent = async (c: Context) => {
+        try {
+            const { deployedUrl, default_agent_name } = (await c.req.json()) as IAgentNameVerification;
             if (!deployedUrl && !default_agent_name) {
                 return c.json(api_response({ message: 'deployedUrl and default_agent_name are required' }), 400);
             }
             await AgentService.verifyAgent(deployedUrl, default_agent_name);
             return c.json(api_response({ message: 'Agent URL verified successfully', data: true }), 200);
         } catch (error) {
-            if(error instanceof Error) {
+            if (error instanceof Error) {
                 return c.json(api_response({ message: error.message, data: false, is_error: true }), 500);
             }
         }
@@ -245,7 +257,7 @@ export class AgentController {
             }
 
             // Validate numeric fields
-            const numericCost = parseFloat(agentCost);
+            const numericCost = parseFloat(agentCost.toString());
             if (isNaN(numericCost) || numericCost < 0) {
                 return c.json(
                     api_response({
@@ -272,7 +284,7 @@ export class AgentController {
             const agent = await AgentService.createAgent(user.id, {
                 name: name.trim(),
                 description: description.trim(),
-                agentCost,
+                agentCost: agentCost.toString(),
                 deployedUrl: deployedUrl.trim(),
                 llmProvider: llmProvider.trim(),
                 skills: skills.map(skill => skill.trim()),
