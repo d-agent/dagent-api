@@ -32,7 +32,7 @@ const verifyJwt = async (c: Context, next: Next): Promise<void | Response> => {
 
         return next();
     } catch (error) {
-        console.error('error', error)
+        console.error('error', error);
         return c.json({ error: "Invalid token" }, 401);
     }
 };
