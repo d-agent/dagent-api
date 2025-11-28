@@ -80,7 +80,31 @@ export const callProxiedAgent = async (deployedUrl: string, agent_default_name: 
 		);
 	}
 
-	const json_response = await response.json()
+	// Read response text once (can only be read once)
+	const responseText = await response.text().catch(() => 'Unable to read response');
+
+	// Check if response is OK before parsing
+	if (!response.ok) {
+		throw new Error(
+			`Agent request failed with status ${response.status}: ${responseText.substring(0, 500)}`
+		);
+	}
+
+	// Validate response is not empty
+	if (!responseText || responseText.trim() === '') {
+		throw new Error('Empty response from agent');
+	}
+
+	// Try to parse JSON, with better error handling
+	let json_response;
+	try {
+		json_response = JSON.parse(responseText);
+	} catch (parseError) {
+		throw new Error(
+			`Failed to parse JSON response from agent: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Response preview: ${responseText.substring(0, 500)}`
+		);
+	}
+
 	const parsedResponse = parseAgentResponse(agent_framework, json_response)
 	return parsedResponse
 }
