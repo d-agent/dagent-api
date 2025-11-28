@@ -9,6 +9,12 @@ export class AgentController {
     public static readonly primary = async (c: Context) => {
         try {
             const { requirements, text, is_new_session } = await c.req.json();
+            if (!text || typeof text !== 'string') {
+                return c.json(api_response({
+                    message: "text field is required and must be a string",
+                    is_error: true
+                }), 400);
+            }
 
             // Get api_key from context (set by verifyApiKey middleware)
             const api_key = await c.get("api_key");
