@@ -5,6 +5,7 @@ import { cosineSimilarity, generateEmbedding } from "./helper";
 
 export async function matchAgents(requirement: Requirement, topN = 10) {
 	const reqEmbedding = await generateEmbedding(requirement.description);
+
 	const agents = await prisma.agent.findMany({
 		where: {
 			isActive: true,

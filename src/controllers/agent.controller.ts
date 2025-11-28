@@ -1,25 +1,55 @@
 import { Context } from "hono"
-import { getCookie } from "hono/cookie"
 import { AgentService } from "../services/agent.service"
 import { api_response } from "../lib/utils/parser"
 import { errorMessageIncludes, getErrorMessage, getErrorStack } from "../lib/utils/error"
 import { IAgentCreate, IAgentNameVerification } from "../lib/validators/agent.validator"
+import { SessionService } from "../services/session.service"
 
 export class AgentController {
     public static readonly primary = async (c: Context) => {
         try {
-            const agentId = getCookie(c, 'agent_id');
-            const { requirement_json, message } = await c.req.json();
+            const { requirements, text, is_new_session } = await c.req.json();
+            if (!text || typeof text !== 'string') {
+                return c.json(api_response({
+                    message: "text field is required and must be a string",
+                    is_error: true
+                }), 400);
+            }
+
+            // Get api_key from context (set by verifyApiKey middleware)
+            const api_key = await c.get("api_key");
+            if (!api_key || !api_key.userId) {
+                return c.json(
+                    api_response({
+                        message: "API key authentication required",
+                        is_error: true
+                    }),
+                    401
+                );
+            }
+
+            // Clear session if starting a new session
+            if (is_new_session === true) {
+                await SessionService.clearAgentId(api_key.userId, api_key.id);
+            }
+
+            // Get agent_id from Redis session storage
+            const agentId = await SessionService.getAgentId(api_key.userId, api_key.id);
+
+            console.log("agentId ALA re", agentId);
             let agentResponse;
             if (!agentId) {
                 agentResponse = await AgentService.primary(c, {
-                    requirement_json: requirement_json,
-                    message: message.trim()
+                    requirement_json: requirements,
+                    message: text.trim()
                 });
             } else {
-                agentResponse = await AgentService.primary(c, { agent_id: agentId, message: message.trim() });
+                agentResponse = await AgentService.primary(c, { agent_id: agentId, message: text.trim() });
+                // Refresh session TTL on each request
+                await SessionService.refreshSession(api_key.userId, api_key.id);
             }
             return c.json(api_response({ message: "Agent response", data: agentResponse }));
+
         } catch (error) {
             const errorMessage = getErrorMessage(error);
             const errorStack = getErrorStack(error);
@@ -92,16 +122,16 @@ export class AgentController {
         }
     }
 
-    public static readonly verifyAgent = async(c: Context) => {
+    public static readonly verifyAgent = async (c: Context) => {
         try {
-            const { deployedUrl, default_agent_name } =(await c.req.json()) as IAgentNameVerification;
+            const { deployedUrl, default_agent_name } = (await c.req.json()) as IAgentNameVerification;
             if (!deployedUrl && !default_agent_name) {
                 return c.json(api_response({ message: 'deployedUrl and default_agent_name are required' }), 400);
             }
             await AgentService.verifyAgent(deployedUrl, default_agent_name);
             return c.json(api_response({ message: 'Agent URL verified successfully', data: true }), 200);
         } catch (error) {
-            if(error instanceof Error) {
+            if (error instanceof Error) {
                 return c.json(api_response({ message: error.message, data: false, is_error: true }), 500);
             }
         }
@@ -245,7 +275,20 @@ export class AgentController {
             }
 
             // Validate numeric fields
-            const numericCost = parseFloat(agentCost);
+            let numericCost: number;
+            if (typeof agentCost === 'number') {
+                numericCost = agentCost;
+            } else if (typeof agentCost === 'string') {
+                numericCost = parseFloat(agentCost);
+            } else {
+                return c.json(
+                    api_response({
+                        message: "agentCost must be a valid non-negative number",
+                        is_error: true
+                    }),
+                    400
+                );
+            }
             if (isNaN(numericCost) || numericCost < 0) {
                 return c.json(
                     api_response({
@@ -272,7 +315,7 @@ export class AgentController {
             const agent = await AgentService.createAgent(user.id, {
                 name: name.trim(),
                 description: description.trim(),
-                agentCost,
+                agentCost: agentCost.toString(),
                 deployedUrl: deployedUrl.trim(),
                 llmProvider: llmProvider.trim(),
                 skills: skills.map(skill => skill.trim()),

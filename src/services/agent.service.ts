@@ -6,6 +6,7 @@ import { setCookie } from "hono/cookie";
 import { prisma } from "../lib/db";
 import { agentContract } from "../lib/contracts/agent.contract";
 import { agentApi } from "../lib/agents";
+import { SessionService } from "./session.service";
 
 export class AgentService {
 	public static readonly primary = async (
@@ -63,7 +64,7 @@ export class AgentService {
 				matched_agents[0].deployedUrl,
 				matched_agents[0].default_agent_name || "",
 				(matched_agents[0].framework_used as AgentFrameWorks) ||
-					AgentFrameWorks.google_adk,
+				AgentFrameWorks.google_adk,
 				data.message,
 				session_id,
 				api_key.userId
@@ -83,8 +84,9 @@ export class AgentService {
 			//     api_key: ctx.get("api_key"),
 			// });
 
-			console.log("matched_agent", matched_agents[0]);
-			setCookie(ctx, "agent_id", matched_agents[0].id);
+			// console.log("matched_agent", matched_agents[0]);
+			// Store agent_id in Redis for session persistence
+			await SessionService.setAgentId(api_key.userId, api_key.id, matched_agents[0].id);
 			return response.response_content;
 		} else {
 			throw new Error("No agent ID or requirement JSON provided");

@@ -11,7 +11,7 @@ interface JwtPayload {
 
 const verifyJwt = async (c: Context, next: Next): Promise<void | Response> => {
     const authHeader = await c.req.header("Authorization");
-    console.log('authHeader', authHeader)
+
     if (!authHeader) {
         return c.json({ error: "Unauthorized" }, 401);
     }
@@ -20,7 +20,7 @@ const verifyJwt = async (c: Context, next: Next): Promise<void | Response> => {
     const token = authHeader.startsWith("Bearer ")
         ? authHeader.slice(7)
         : authHeader;
-    console.log('token', token)
+
     try {
         const isValid = await verify(token, config.JWT_SECRET, { alg: 'HS256' });
         if (!isValid) {
@@ -32,7 +32,7 @@ const verifyJwt = async (c: Context, next: Next): Promise<void | Response> => {
 
         return next();
     } catch (error) {
-        console.log('error', error)
+        console.error('error', error);
         return c.json({ error: "Invalid token" }, 401);
     }
 };

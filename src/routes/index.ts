@@ -10,10 +10,10 @@ const app = new Hono();
 // Public routes (no auth required)
 app.route('/auth', authRoute);
 app.route('/', devRoute);
+app.route('/dagent', agentRoute);
 
 // Protected routes (JWT required)
 app.use(verifyJwt);
-app.route('/dagent', agentRoute);
 app.route('/apikey', apiKeyRoute);
 
 export default app;
