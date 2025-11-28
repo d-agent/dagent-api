@@ -269,7 +269,20 @@ export class AgentController {
             }
 
             // Validate numeric fields
-            const numericCost = parseFloat(agentCost.toString());
+            let numericCost: number;
+            if (typeof agentCost === 'number') {
+                numericCost = agentCost;
+            } else if (typeof agentCost === 'string') {
+                numericCost = parseFloat(agentCost);
+            } else {
+                return c.json(
+                    api_response({
+                        message: "agentCost must be a valid non-negative number",
+                        is_error: true
+                    }),
+                    400
+                );
+            }
             if (isNaN(numericCost) || numericCost < 0) {
                 return c.json(
                     api_response({
