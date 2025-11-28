@@ -3,19 +3,34 @@ import { AgentService } from "../services/agent.service"
 import { api_response } from "../lib/utils/parser"
 import { errorMessageIncludes, getErrorMessage, getErrorStack } from "../lib/utils/error"
 import { IAgentCreate, IAgentNameVerification } from "../lib/validators/agent.validator"
+import { SessionService } from "../services/session.service"
 
 export class AgentController {
     public static readonly primary = async (c: Context) => {
         try {
-            // const agentId = getCookie(c, 'agent_id');
             const { requirements, text, is_new_session } = await c.req.json();
 
-            if (is_new_session === true) {
-                c.set("agent_id", null);
+            // Get api_key from context (set by verifyApiKey middleware)
+            const api_key = await c.get("api_key");
+            if (!api_key || !api_key.userId) {
+                return c.json(
+                    api_response({
+                        message: "API key authentication required",
+                        is_error: true
+                    }),
+                    401
+                );
             }
 
-            const agentId = c.get("agent_id");
+            // Clear session if starting a new session
+            if (is_new_session === true) {
+                await SessionService.clearAgentId(api_key.userId, api_key.id);
+            }
 
+            // Get agent_id from Redis session storage
+            const agentId = await SessionService.getAgentId(api_key.userId, api_key.id);
+
+            console.log("agentId ALA re", agentId)
             let agentResponse;
             if (!agentId) {
                 agentResponse = await AgentService.primary(c, {
@@ -24,6 +39,8 @@ export class AgentController {
                 });
             } else {
                 agentResponse = await AgentService.primary(c, { agent_id: agentId, message: text.trim() });
+                // Refresh session TTL on each request
+                await SessionService.refreshSession(api_key.userId, api_key.id);
             }
             return c.json(api_response({ message: "Agent response", data: agentResponse }));
 
