@@ -30,7 +30,6 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization", "x-api-key"],
     allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
     exposeHeaders: ["Content-Length", "x-api-key"],
-    exposeHeaders: ["Content-Length", "x-api-key"],
     maxAge: 600,
     credentials: true,
   }),
