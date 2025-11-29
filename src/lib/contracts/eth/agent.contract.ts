@@ -1,7 +1,7 @@
 import { Contract } from "ethers";
 import { ContractClient } from "./contract";
 import agentAbi from "./abis/agent-abis.json";
-import { Agent } from "../../types/contract";
+import { Agent } from "../../../types/contract";
 
 class AgentContractClient extends ContractClient {
 	private contract: Contract;

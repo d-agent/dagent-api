@@ -1,7 +1,7 @@
 import { AgentCard, AgentFrameWorks, GoogleADKRequestBody } from "../../types";
 import { parseAgentResponse } from "./parser";
 import { prisma } from "../db";
-import { stakeContract } from "../contracts/stake.contract";
+import { stakeContract } from "../contracts/eth/stake.contract";
 import { config } from "../env";
 import { formatEther, parseEther } from "ethers";
 import { CloudflareEmbeddingResponse } from "../../types/utils";
