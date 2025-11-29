@@ -34,7 +34,7 @@ export class AgentService {
 					},
 				},
 			});
-			
+
 			if (!agent?.deployedUrl || !agent?.llmProvider || !agent?.userId) {
 				throw new Error("Agent URL or provider not found");
 			}
@@ -97,14 +97,14 @@ export class AgentService {
 		uri: string,
 		agent_name: string
 	) => {
-		const { apps } = await agentApi.getApp(uri);
+		const apps = await agentApi.getApp(uri);
 		if (!apps) {
 			throw new Error("Invalid agent URI");
 		}
 		if (!apps.includes(agent_name)) {
 			throw new Error("Agent name not found in the deployed URL");
 		}
-		return apps;
+		return true;
 	};
 
 	public static readonly createAgent = async (
