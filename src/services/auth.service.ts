@@ -109,7 +109,7 @@ export class AuthService {
                 sameSite: 'strict',
                 maxAge: 60 * 60 * 24 * 30,
             });
-            return { token: token };
+            return { token: token, userId: user.id };
         }
 
     }
