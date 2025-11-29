@@ -1,10 +1,32 @@
 import { prisma } from "../db";
 import { Requirement } from "../../types";
-import { cosineSimilarity, generateEmbedding } from "./helper";
+import { CloudFlareEmbeddingFunction, cosineSimilarity, generateEmbedding } from "./helper";
+import { chromaClient } from "../chromadb";
 
+
+export const getToto = async () => {
+	const client = await chromaClient.client()
+	const embeddingFunction = new CloudFlareEmbeddingFunction()
+	let collection;
+	try {
+		collection = await client.getCollection({
+			name: 'toto-collection',
+			embeddingFunction,
+		});
+	} catch (error) {
+		// Create collection if pookie 🎀 doesn't exist 
+		collection = await client.createCollection({
+			name: 'toto-collection',
+			embeddingFunction,
+		});
+	}
+
+	return collection;
+}
 
 export async function matchAgents(requirement: Requirement, topN = 10) {
 	const reqEmbedding = await generateEmbedding(requirement.description);
+
 
 	const agents = await prisma.agent.findMany({
 		where: {
@@ -83,3 +105,54 @@ export async function matchAgents(requirement: Requirement, topN = 10) {
 
 	return scoredAgents.slice(0, topN).map((a) => a.agent);
 }
+
+export async function matchAgentsV2(requirement: Requirement, topN = 10) {
+	const toto = await getToto()
+	// implement score based matching here
+	const results = await toto.query({
+		queryTexts: [JSON.stringify(requirement)],
+		nResults: topN,
+	})
+
+	console.log('results ala:', results.documents);
+	let semanticScore = 0;
+	let providerScore = 0;
+	let skillsOverlap = 0;
+	let costScore = 0;
+
+	const scoredAgents = await Promise.all(results.ids.map(async (id: string[], index: number): Promise<{ agent: any, finalScore: number }> => {
+		const agent = await prisma.agent.findUnique({ where: { id: id[0] as string, isActive: true }, include: { user: { include: { walletAddress: true } } } });
+		if (!agent) {
+			return {
+				agent: null,
+				finalScore: 0,
+			}
+		}
+		semanticScore += 1 - parseFloat(results.distances[index].toString());
+		providerScore += agent?.llmProvider === requirement.preferred_llm_provider ? 1 : 0;
+		skillsOverlap += (agent?.skills?.filter((s) => requirement.skills?.includes(s)).length || 0) / (requirement.skills?.length || 1); // use 1 to avoid divide by zero
+
+		if (typeof requirement.max_agent_cost === "number") {
+			costScore += parseFloat(agent?.agentCost || '0') <= requirement.max_agent_cost ? 1 : 0;
+		} else {
+			costScore += 0; // If no cost requirement, do not count
+		}
+
+		const finalScore =
+			1 * (isNaN(semanticScore) ? 0 : semanticScore) +
+			0.2 * (isNaN(providerScore) ? 0 : providerScore) +
+			0.2 * (isNaN(skillsOverlap) ? 0 : skillsOverlap) +
+			0.1 * (isNaN(costScore) ? 0 : costScore);
+
+		const validatedFinalScore = isNaN(finalScore) ? 0 : finalScore;
+
+		return {
+			agent: agent,
+			finalScore: validatedFinalScore,
+		}
+	}))
+
+	return scoredAgents.filter((a) => a.agent !== null).sort((a, b) => b.finalScore - a.finalScore).slice(0, topN).map((a) => a.agent);
+}
+
+

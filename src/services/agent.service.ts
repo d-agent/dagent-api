@@ -1,5 +1,5 @@
-import { callProxiedAgent, generateEmbedding } from "../lib/utils/helper";
-import { matchAgents } from "../lib/utils";
+import { callProxiedAgent, CloudFlareEmbeddingFunction, generateEmbedding } from "../lib/utils/helper";
+import { getToto, matchAgents, matchAgentsV2 } from "../lib/utils";
 import { AgentFrameWorks, Requirement } from "../types";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
@@ -34,7 +34,7 @@ export class AgentService {
 					},
 				},
 			});
-
+			
 			if (!agent?.deployedUrl || !agent?.llmProvider || !agent?.userId) {
 				throw new Error("Agent URL or provider not found");
 			}
@@ -56,7 +56,7 @@ export class AgentService {
 
 			return response.response_content;
 		} else if (data.requirement_json) {
-			const matched_agents = await matchAgents(data.requirement_json, 5);
+			const matched_agents = await matchAgentsV2(data.requirement_json, 5);
 			if (!matched_agents || !matched_agents[0].deployedUrl) {
 				throw new Error("Agent not found");
 			}
@@ -133,7 +133,7 @@ export class AgentService {
 			can_stream: boolean;
 		}
 	) => {
-		const embedding = await generateEmbedding(description);
+		const embedding = await new CloudFlareEmbeddingFunction().generate([description]);
 		const agent = await prisma.agent.create({
 			data: {
 				name,
@@ -143,17 +143,42 @@ export class AgentService {
 				llmProvider,
 				isActive: true,
 				user: { connect: { id: user_id } },
-				embedding,
+				embedding: embedding[0],
 				isPublic: true,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			},
 		});
-		await agentContract.registerAgent({
-			ownerId: user_id,
-			agentIdHash: agent.id,
-			agentAddress: agent.deployedUrl,
-		});
+		// await agentContract.registerAgent({
+		// 	ownerId: user_id,
+		// 	agentIdHash: agent.id,
+		// 	agentAddress: agent.deployedUrl,
+		// });
+
+		const toto = await getToto()
+
+		const stringifiedReqBody = JSON.stringify({
+			name: agent.name,
+			description: agent.description,
+			agentCost: agent.agentCost,
+			llmProvider: agent.llmProvider,
+			skills: agent.skills,
+		})
+
+		// added to toto chrom collection with cf embeddings
+		toto.add({
+			ids: [agent.id],
+			metadatas: [{
+				name: agent.name,
+				description: agent.description,
+				agentCost: agent.agentCost,
+				deployedUrl: agent.deployedUrl,
+				llmProvider: agent.llmProvider,
+			}],
+			documents: [stringifiedReqBody],
+			embeddings: embedding,
+		})
+
 
 		return agent;
 	};

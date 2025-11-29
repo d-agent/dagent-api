@@ -9,6 +9,9 @@ export const env = z.object({
     JWT_SECRET: z.string(),
     UPSTASH_REDIS_REST_URL: z.string().optional(), // Upstash Redis REST URL
     UPSTASH_REDIS_REST_TOKEN: z.string().optional(), // Upstash Redis REST Token
+    CF_EMBEDDING_API_KEY: z.string(),
+    CF_EMBEDDING_MODEL: z.string(),
+    CF_ACCOUNT_ID: z.string()
 });
 
 export const config = env.parse(process.env);

@@ -3,12 +3,12 @@ export type LLMProvider = "OpenAI" | "Anthropic" | "Llama" | "Google" | "Custom"
 // requirements.json
 export interface Requirement {
     description: string;
-    preferred_llm_provider: string;
-    max_agent_cost: number;
-    max_total_agent_cost: number;
-    skills: string[];
-    streaming: boolean;
-    is_multi_agent_system: boolean;
+    preferred_llm_provider?: string;
+    max_agent_cost?: number;
+    max_total_agent_cost?: number;
+    skills?: string[];
+    streaming?: boolean;
+    is_multi_agent_system?: boolean;
 }
 
 // AgentCard

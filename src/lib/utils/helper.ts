@@ -4,11 +4,16 @@ import { prisma } from "../db";
 import { stakeContract } from "../contracts/stake.contract";
 import { config } from "../env";
 import { formatEther, parseEther } from "ethers";
+import { CloudflareEmbeddingResponse } from "../../types/utils";
+import axios from "axios";
 
 export const callProxiedAgent = async (deployedUrl: string, agent_default_name: string, agent_framework: AgentFrameWorks, message: string, session_id: string, user_id: string) => {
-	// console.log('deployedUrl', deployedUrl)
-	// console.log('session_id', session_id)
-	// console.log('user_id', user_id)
+	console.log('deployedUrl', deployedUrl)
+	console.log('session_id', session_id)
+	console.log('user_id', user_id)
+	console.log('agent_default_name', agent_default_name)
+	console.log('agent_framework', agent_framework)
+	console.log('message', message)
 
 	let response: Response | undefined;
 
@@ -24,7 +29,9 @@ export const callProxiedAgent = async (deployedUrl: string, agent_default_name: 
 				}
 			);
 			if (!session.ok) {
-				throw new Error(`Failed to initialize session: ${session.statusText}`);
+
+				throw new Error(`Failed to initialize session: ${session.statusText}: ${await session.text()}`);
+
 			}
 
 			const requestBody: GoogleADKRequestBody = {
@@ -128,6 +135,52 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 	}
 
 	return data.result.data[0];
+}
+
+export class CloudFlareEmbeddingFunction {
+	private api_key = config.CF_EMBEDDING_API_KEY;
+	private account_id = config.CF_ACCOUNT_ID;
+	private model_name = config.CF_EMBEDDING_MODEL;
+
+	public async generate(texts: string[]): Promise<number[][]> {
+		try {
+			const response = await axios.post(
+				`https://api.cloudflare.com/client/v4/accounts/${this.account_id}/ai/run/${this.model_name}`,
+				{
+					text: texts
+				},
+				{
+					headers: {
+						Authorization: `Bearer ${this.api_key}`,
+						'Content-Type': 'application/json'
+					}
+				}
+			);
+
+			if (response.status !== 200) {
+				console.error(`Error fetching embeddings: ${response.status} ${response.statusText}`);
+				throw new Error(`Error fetching embeddings: ${response.statusText}`);
+			}
+
+			const parsed = CloudflareEmbeddingResponse.safeParse(response.data);
+			if (!parsed.success) {
+				console.error("Error parsing response:", parsed.error);
+				throw new Error("Error parsing response");
+			}
+
+			return parsed.data.result.data;
+		} catch (error) {
+			console.error("Cloudflare AI embeddings error:", error);
+			if (axios.isAxiosError(error)) {
+				if (error.response?.status === 401) {
+					throw new Error("Authentication error: Invalid Cloudflare API key");
+				} else if (error.response) {
+					throw new Error(`Cloudflare API error: ${error.response.status} - ${error.response.statusText}`);
+				}
+			}
+			throw error;
+		}
+	}
 }
 
 export async function embedAgentCard(agent: AgentCard) {

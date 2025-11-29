@@ -34,14 +34,14 @@ export class AgentController {
             }
 
             // Get agent_id from Redis session storage
-            const agentId = await SessionService.getAgentId(api_key.userId, api_key.id);
+            const agentId = await SessionService.getAgentId(api_key.userId, api_key.id)
 
             console.log("agentId ALA re", agentId);
             let agentResponse;
             if (!agentId) {
                 agentResponse = await AgentService.primary(c, {
                     requirement_json: requirements,
-                    message: text.trim()
+                    message: text.trim(),
                 });
             } else {
                 agentResponse = await AgentService.primary(c, { agent_id: agentId, message: text.trim() });
@@ -198,15 +198,15 @@ export class AgentController {
                     );
                 }
 
-                if (value.length > maxLength) {
-                    return c.json(
-                        api_response({
-                            message: `${fieldName} must be ${maxLength} characters or less`,
-                            is_error: true
-                        }),
-                        400
-                    );
-                }
+                // if (value.length > maxLength) {
+                //     return c.json(
+                //         api_response({
+                //             message: `${fieldName} must be ${maxLength} characters or less`,
+                //             is_error: true
+                //         }),
+                //         400
+                //     );
+                // }
             }
 
             // Validate URL format

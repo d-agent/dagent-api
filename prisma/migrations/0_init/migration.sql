@@ -2,26 +2,35 @@
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateTable
-CREATE TABLE "public"."account" (
+CREATE TABLE "user" (
     "id" TEXT NOT NULL,
-    "accountId" TEXT NOT NULL,
-    "providerId" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "accessToken" TEXT,
-    "refreshToken" TEXT,
-    "idToken" TEXT,
-    "accessTokenExpiresAt" TIMESTAMPTZ(6),
-    "refreshTokenExpiresAt" TIMESTAMPTZ(6),
-    "scope" TEXT,
-    "password" TEXT,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "emailVerified" BOOLEAN NOT NULL,
+    "image" TEXT,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "nonce" TEXT,
+    "creditBalance" DOUBLE PRECISION NOT NULL DEFAULT 100,
+    "creditBalanceLastUpdated" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "account_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "public"."apikey" (
+CREATE TABLE "walletAddress" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "address" TEXT NOT NULL,
+    "chainId" INTEGER NOT NULL,
+    "isPrimary" BOOLEAN NOT NULL,
+    "createdAt" TIMESTAMPTZ(6) NOT NULL,
+
+    CONSTRAINT "walletAddress_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "apikey" (
     "id" TEXT NOT NULL,
     "name" TEXT,
     "start" TEXT,
@@ -48,71 +57,49 @@ CREATE TABLE "public"."apikey" (
 );
 
 -- CreateTable
-CREATE TABLE "public"."session" (
-    "id" TEXT NOT NULL,
-    "expiresAt" TIMESTAMPTZ(6) NOT NULL,
-    "token" TEXT NOT NULL,
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
-    "ipAddress" TEXT,
-    "userAgent" TEXT,
-    "userId" TEXT NOT NULL,
-
-    CONSTRAINT "session_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."user" (
+CREATE TABLE "agent" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "emailVerified" BOOLEAN NOT NULL,
-    "image" TEXT,
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "user_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."verification" (
-    "id" TEXT NOT NULL,
-    "identifier" TEXT NOT NULL,
-    "value" TEXT NOT NULL,
-    "expiresAt" TIMESTAMPTZ(6) NOT NULL,
-    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "verification_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "public"."walletAddress" (
-    "id" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "agentCost" TEXT NOT NULL,
+    "deployedUrl" TEXT NOT NULL,
+    "llmProvider" TEXT NOT NULL,
+    "isPublic" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN NOT NULL,
+    "availableToUse" BOOLEAN NOT NULL DEFAULT false,
     "userId" TEXT NOT NULL,
-    "address" TEXT NOT NULL,
-    "chainId" INTEGER NOT NULL,
-    "isPrimary" BOOLEAN NOT NULL,
     "createdAt" TIMESTAMPTZ(6) NOT NULL,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "embedding" DOUBLE PRECISION[],
+    "inputTokenCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "outputTokenCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "can_stream" BOOLEAN,
+    "default_agent_name" TEXT,
+    "framework_used" TEXT NOT NULL DEFAULT 'google_adk',
+    "is_multiAgentSystem" BOOLEAN NOT NULL DEFAULT false,
+    "skills" TEXT[],
 
-    CONSTRAINT "walletAddress_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "agent_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "session_token_key" ON "public"."session"("token");
+CREATE UNIQUE INDEX "user_email_key" ON "user"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_email_key" ON "public"."user"("email");
+CREATE UNIQUE INDEX "walletAddress_userId_key" ON "walletAddress"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "apikey_name_key" ON "apikey"("name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "apikey_key_key" ON "apikey"("key");
 
 -- AddForeignKey
-ALTER TABLE "public"."account" ADD CONSTRAINT "account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "walletAddress" ADD CONSTRAINT "walletAddress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "public"."apikey" ADD CONSTRAINT "apikey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "apikey" ADD CONSTRAINT "apikey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
 -- AddForeignKey
-ALTER TABLE "public"."session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
-
--- AddForeignKey
-ALTER TABLE "public"."walletAddress" ADD CONSTRAINT "walletAddress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
+ALTER TABLE "agent" ADD CONSTRAINT "agent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION;
 

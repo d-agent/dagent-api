@@ -8,17 +8,19 @@ datasource db {
 }
 
 model user {
-  id            String         @id @default(cuid())
-  name          String
-  email         String         @unique
-  emailVerified Boolean
-  image         String?
-  nonce         String?
-  createdAt     DateTime       @default(now()) @db.Timestamptz(6)
-  updatedAt     DateTime       @default(now()) @db.Timestamptz(6)
-  agent         agent[]
-  apikey        apikey[]
-  walletAddress walletAddress?
+  id                       String         @id @default(cuid())
+  name                     String
+  email                    String         @unique
+  emailVerified            Boolean
+  image                    String?
+  createdAt                DateTime       @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime       @default(now()) @db.Timestamptz(6)
+  nonce                    String?
+  creditBalance            Float          @default(100)
+  creditBalanceLastUpdated DateTime       @default(now()) @db.Timestamptz(6)
+  agent                    agent[]
+  apikey                   apikey[]
+  walletAddress            walletAddress?
 }
 
 model walletAddress {
