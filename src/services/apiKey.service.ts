@@ -1,5 +1,7 @@
+import { id } from "ethers";
 import { auth } from "../lib/auth";
 import { getUserAddressBalance } from "../lib/utils/helper";
+import { prisma } from "../lib/db";
 
 export class ApiKeyService {
 	public static readonly createApiKey = async (
@@ -42,12 +44,16 @@ export class ApiKeyService {
 	};
 
 	public static readonly deleteApiKey = async (api_key_id: string) => {
-		const apiKey = await auth.api.deleteApiKey({
-			body: {
-				keyId: api_key_id,
-			},
+		const apiKey = await prisma.apikey.delete({
+			where: {
+				id: api_key_id
+			}
 		});
-		return apiKey;
+		if (!apiKey) {
+			throw new Error("API Key not found");
+		}
+
+		return apiKey.id;
 	};
 
 	public static readonly getAllApiKeys = async (user_id: string) => {
