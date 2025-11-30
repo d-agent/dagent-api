@@ -26,7 +26,7 @@ app.use(logger());
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "https://dagent.dev", "https://web.dagent.dev"],
+    origin: ["http://localhost:5173", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "https://dagent.dev", "https://web.dagent.dev", "https://www.dagent.dev"],
     allowHeaders: ["Content-Type", "Authorization", "x-api-key"],
     allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE"],
     exposeHeaders: ["Content-Length", "x-api-key"],
