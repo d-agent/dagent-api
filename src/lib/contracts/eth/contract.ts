@@ -1,4 +1,4 @@
-import { Contract, JsonRpcProvider, Wallet } from "ethers";
+import { JsonRpcProvider, Wallet } from "ethers";
 
 export class ContractClient {
 	private provider: JsonRpcProvider;

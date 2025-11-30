@@ -4,7 +4,7 @@ import { AgentFrameWorks, Requirement } from "../types";
 import { Context } from "hono";
 import { setCookie } from "hono/cookie";
 import { prisma } from "../lib/db";
-import { agentContract } from "../lib/contracts/agent.contract";
+import { agentContract } from "../lib/contracts/eth/agent.contract";
 import { agentApi } from "../lib/agents";
 import { SessionService } from "./session.service";
 

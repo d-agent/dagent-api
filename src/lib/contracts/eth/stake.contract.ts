@@ -1,8 +1,7 @@
 import { Contract, parseEther } from "ethers";
-import { ContractClient } from "./contract";
+import { ContractClient } from "../eth/contract";
 import stakeAbi from "./abis/stake-abis.json";
-import { Escrow } from "../../types/contract";
-import { weiToEth } from "../utils/helper";
+import { Escrow } from "../../../types/contract";
 
 class StakeContractClient extends ContractClient {
 	private contract: Contract;
@@ -100,16 +99,16 @@ class StakeContractClient extends ContractClient {
 }
 
 // Generate a valid private key for development if none is provided
-const getValidPrivateKey = () => {
-	const envKey = process.env.CONTRACT_PRIVATE_KEY;
-	if (envKey) {
-		return envKey;
-	}
+// const getValidPrivateKey = () => {
+// 	const envKey = process.env.CONTRACT_PRIVATE_KEY;
+// 	if (envKey) {
+// 		return envKey;
+// 	}
 
-	// For development, generate a valid private key
-	// This is a known valid private key for testing (DO NOT USE IN PRODUCTION)
-	return "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
-};
+// 	// For development, generate a valid private key
+// 	// This is a known valid private key for testing (DO NOT USE IN PRODUCTION)
+// 	return "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcsde";
+// };
 
 export const stakeContract = StakeContractClient.instance({
 	rpc: process.env.RPC_URL!,
