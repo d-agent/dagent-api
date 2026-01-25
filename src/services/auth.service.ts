@@ -1,116 +1,73 @@
-import { checkSignature, DataSignature, generateNonce } from '@meshsdk/core';
-import { prisma } from '../lib/db';
-import { NONCE_MESSAGE } from '../lib/utils/constants';
-import { decode, sign, verify } from 'hono/jwt'
-import { config } from '../lib/env';
-import { setCookie } from 'hono/cookie';
-import { Context } from 'hono';
+import { checkSignature, DataSignature, generateNonce } from "@meshsdk/core";
+import { prisma } from "../lib/db";
+import { NONCE_MESSAGE } from "../lib/utils/constants";
+import { decode, sign, verify } from "hono/jwt";
+import { config } from "../lib/env";
+import { setCookie } from "hono/cookie";
+import { Context } from "hono";
+import GoogleOAuth, { googleOAuth } from "../lib/google";
 
 export class AuthService {
-    public static readonly sendNonce = async (address: string) => {
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                walletAddress: {
-                    address: address
-                }
-            },
-            include: {
-                walletAddress: true
-            }
-        });
-
-        const nonce = generateNonce(NONCE_MESSAGE);
-
-        if (existingUser) {
-            await prisma.user.update({
-                where: { id: existingUser.id },
-                data: {
-                    nonce,
-                    updatedAt: new Date()
-                }
-            });
-
-            return { nonce };
-        }
-
-        // Create new user and wallet address in a transaction
-        const userId = crypto.randomUUID();
-        const now = new Date();
-
-        await prisma.$transaction(async (tx) => {
-            await tx.user.create({
-                data: {
-                    id: userId,
-                    name: address,
-                    email: address,
-                    emailVerified: false,
-                    nonce,
-                    createdAt: now,
-                    updatedAt: now
-                }
-            });
-
-            await tx.walletAddress.create({
-                data: {
-                    address: address,
-                    chainId: 1,
-                    isPrimary: true,
-                    userId,
-                    createdAt: now
-                }
-            });
-        });
-
-        return { nonce };
+  public static readonly GoogleSignin = async (c: Context) => {
+    const { authUrl, state } = googleOAuth.getAuthUrl();
+    if (!authUrl || !state) {
+      throw new Error("Unable to generatte oauth url");
     }
+    return { url: authUrl };
+  };
 
-    public static readonly verifyNonce = async (c: Context, address: string, signature: DataSignature) => {
-        const user = await prisma.user.findFirst({
-            where: {
-                walletAddress: {
-                    address: address
-                }
-            },
-            select: {
-                nonce: true,
-                id: true
-            }
-        });
+  public static readonly GoogleCallback = async (
+    c: Context,
+    code: string,
+    state: string,
+  ) => {
+    try {
+      const tokens = await googleOAuth.getTokens(code);
+      console.log("tokens ala", tokens);
 
-        if (!user?.nonce) {
-            throw new Error('User not found or nonce not set');
-        }
+      if (!tokens || !tokens.access_token) {
+        throw new Error("Failed to retrieve Google tokens.");
+      }
+      const profile = await googleOAuth.fetchProfile(tokens.access_token);
+      if (!profile || !profile.email) {
+        throw new Error("Failed to retrieve user info from Google.");
+      }
+      console.log("Profilee", profile);
 
-        const verified = await checkSignature(
-            user.nonce,
-            signature,
-            address as `0x${string}`
-        );
-
-        if (!verified) {
-            throw new Error('Invalid signature');
-        }
-        else {
-            const payload = {
-                sub: user.id,
-                role: 'user',
-                exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30, // Token expires in 30 days
-            }
-
-            // create a bearer access token
-            const token = await sign({
-                payload,
-                alg: 'HS256'
-            }, config.JWT_SECRET);
-
-            setCookie(c, 'token', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 60 * 60 * 24 * 30,
-            });
-            return { token: token, userId: user.id };
-        }
-
+      const user = await prisma.user.upsert({
+        where: { email: profile.email },
+        update: {
+          name: profile.name,
+          image: profile.profilePic,
+        },
+        create: {
+          name: profile.name,
+          email: profile.email,
+          image: profile.profilePic,
+          emailVerified: true,
+        },
+      });
+      const payload = {
+        sub: user.id,
+        role: "user",
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
+      };
+      const token = await sign(
+        {
+          payload,
+          alg: "HS256",
+        },
+        config.JWT_SECRET,
+      );
+      setCookie(c, "token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+      return { token: token, userId: user.id };
+    } catch (error) {
+      console.log(error);
     }
+  };
 }

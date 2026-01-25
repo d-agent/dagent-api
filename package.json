@@ -1,7 +1,7 @@
 {
   "name": "dagent-api",
   "scripts": {
-    "dev": "bun run --hot src/index.ts",
+    "dev": "PORT=4000 bun run --hot src/index.ts",
     "db:deploy": "bunx prisma migrate deploy && bunx prisma generate"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
     "chromadb": "^3.1.6",
     "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
+    "googleapis": "^170.1.0",
     "hono": "^4.9.8",
     "pg": "^8.16.3",
     "prisma": "^7.0.1",
